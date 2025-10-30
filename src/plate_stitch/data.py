@@ -1,5 +1,8 @@
 """Module for loading plate experiment data."""
 
+import glob
+import logging
+import os
 import re
 import string
 from functools import reduce
@@ -23,7 +26,45 @@ class PlateData:
         Args:
             path: Path to the plate images directory.
         """
-        # TODO - discover the plate experiment image files
+        tiff_files = list(glob.glob(os.path.join(path, "*.tiff")))
+        pattern = re.compile(
+            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+)"
+        )
+        wells: dict[tuple[int, int], int] = {}
+        fields = set()
+        planes = set()
+        channels = set()
+        times = set()
+        states = set()
+        flims = set()
+        for file in tiff_files:
+            fn = os.path.basename(file)
+            if m := pattern.match(fn):
+                pos = (int(m.group(1)), int(m.group(2)))
+                wells[pos] = wells.get(pos, 0) + 1
+                fields.add(int(m.group(3)))
+                planes.add(int(m.group(4)))
+                channels.add(int(m.group(5)))
+                times.add(int(m.group(6)))
+                states.add(int(m.group(7)))
+                flims.add(int(m.group(8)))
+
+        # Simple check for complete data
+        if len(set(wells.values())) != 1:
+            logging.getLogger(__name__).warning(
+                "Some well positions have a different number of images: %s",
+                wells,
+            )
+
+        self.well_positions: list[str] = [
+            well_pos(r, c) for r, c in sorted(wells.keys())
+        ]
+        self.fields: list[int] = sorted(fields)
+        self.planes: list[int] = sorted(planes)
+        self.channels: list[int] = sorted(channels)
+        self.times: list[int] = sorted(times)
+        self.states: list[int] = sorted(states)
+        self.flims: list[int] = sorted(flims)
 
     # TODO method to load an image as a numpy array TCZYX
 
