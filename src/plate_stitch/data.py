@@ -1,5 +1,7 @@
 """Module for loading plate experiment data."""
-
+import string
+from functools import reduce
+import re
 
 class PlateData:
     """
@@ -24,3 +26,68 @@ class PlateData:
         pass
 
     # TODO method to load an image as a numpy array TCZYX
+
+
+# https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
+def _from_excel(chars):
+    return reduce(lambda r, x: r * 26 + x + 1, map(string.ascii_uppercase.index, chars), 0)
+
+
+def _divmod_excel(n):
+    a, b = divmod(n, 26)
+    if b == 0:
+        return a - 1, b + 26
+    return a, b
+
+
+def _to_excel(num):
+    chars = []
+    while num > 0:
+        num, d = _divmod_excel(num)
+        chars.append(string.ascii_uppercase[d - 1])
+    return "".join(reversed(chars))
+
+
+def well_pos(row: int, col: int) -> str:
+    """Convert plate row and column to plate well position.
+
+    Uses a base 26 encoded row. This is coded to begin
+    at A and ommits an explicit zero digit when incrementing
+    the power of the base digit. Columns are labelled using
+    the decimal representation. For example:
+    1,1=A1; 2,1=B1; 2,2=B2; 26,1=Z1; 27,2=AA2.
+
+    Args:
+        row: Well row.
+        col: Well column.
+
+    Returns:
+        Plate position.
+    """
+    # Delegate to a solution on StackOverflow
+    return _to_excel(row) + str(col)
+
+
+def plate_pos(well_pos: str) -> tuple[int, int]:
+    """Convert plate well position to plate row and column.
+
+    Uses a base 26 encoded row. This is coded to begin
+    at A and ommits an explicit zero digit when incrementing
+    the power of the base digit. Columns are labelled using
+    the decimal representation. For example:
+    1,1=A1; 2,1=B1; 2,2=B2; 26,1=Z1; 27,2=AA2.
+
+    Args:
+        well_pos: Well position.
+
+    Returns:
+        (row, column) position.
+
+    Raises:
+        Exception: if the format is not a recognised well position.
+    """
+    # Extract row and column
+    if m := re.fullmatch(r"([A-Z]+)(\d+)", well_pos):
+        # Delegate to a solution on StackOverflow
+        return _from_excel(m.group(1)), int(m.group(2))
+    raise Exception("Unknown plate well position: " + well_pos)

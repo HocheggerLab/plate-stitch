@@ -3,8 +3,9 @@
 import os
 import argparse
 import glob
-import string
 import re
+
+from plate_stitch.data import well_pos
 
 
 # Check if the path is a valid directory, or raise an error
@@ -21,27 +22,6 @@ def parse_args():
     )
     parser.add_argument("data", type=dir_path, nargs="+", help="Plate data directory")
     return parser.parse_args()
-
-
-# https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
-def divmod_excel(n):
-    a, b = divmod(n, 26)
-    if b == 0:
-        return a - 1, b + 26
-    return a, b
-
-
-def to_excel(num):
-    chars = []
-    while num > 0:
-        num, d = divmod_excel(num)
-        chars.append(string.ascii_uppercase[d - 1])
-    return "".join(reversed(chars))
-
-
-def well_pos(row: int, col: int):
-    """Convert well row and column to plate position"""
-    return to_excel(row) + str(col)
 
 
 # TODO: Convert this logic to a PlateDataset object. Constructor receives a directory.
