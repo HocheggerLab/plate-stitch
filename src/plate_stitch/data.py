@@ -1,11 +1,12 @@
 """Module for loading plate experiment data."""
+
+import re
 import string
 from functools import reduce
-import re
+
 
 class PlateData:
-    """
-    Provides data loading of an Operetta plate experiment.
+    """Provides data loading of an Operetta plate experiment.
 
     The data is expected to be in the format of single plane tiff files
     named using the following convention:
@@ -23,24 +24,27 @@ class PlateData:
             path: Path to the plate images directory.
         """
         # TODO - discover the plate experiment image files
-        pass
 
     # TODO method to load an image as a numpy array TCZYX
 
 
 # https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
-def _from_excel(chars):
-    return reduce(lambda r, x: r * 26 + x + 1, map(string.ascii_uppercase.index, chars), 0)
+def _from_excel(chars: str) -> int:
+    return reduce(
+        lambda r, x: r * 26 + x + 1,
+        map(string.ascii_uppercase.index, chars),
+        0,
+    )
 
 
-def _divmod_excel(n):
+def _divmod_excel(n: int) -> tuple[int, int]:
     a, b = divmod(n, 26)
     if b == 0:
         return a - 1, b + 26
     return a, b
 
 
-def _to_excel(num):
+def _to_excel(num: int) -> str:
     chars = []
     while num > 0:
         num, d = _divmod_excel(num)

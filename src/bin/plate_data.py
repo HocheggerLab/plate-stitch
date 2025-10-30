@@ -1,40 +1,43 @@
 #!/usr/bin/env python3
+"""Program to list available plate data."""
 
-import os
 import argparse
 import glob
+import os
 import re
 
 from plate_stitch.data import well_pos
 
 
-# Check if the path is a valid directory, or raise an error
-def dir_path(path):
+def _dir_path(path: str) -> str:
+    """Check if the path is a valid directory, or raise an error."""
     if os.path.isdir(path):
         return path
     else:
         raise FileNotFoundError(path)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="""Program to list available plate data"""
-    )
-    parser.add_argument("data", type=dir_path, nargs="+", help="Plate data directory")
-    return parser.parse_args()
-
-
 # TODO: Convert this logic to a PlateDataset object. Constructor receives a directory.
 # It provides attributes on the plate and the ability to load any row/col/field/t/c/z as numpy image TCZYX.
 
 
-def main():
-    args = parse_args()
-    for dir in args.data:
-        print(dir)
-        tiff_files = list(glob.glob(os.path.join(dir, "*.tiff")))
-        pattern = re.compile(r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+)")
-        wells = {}
+def main() -> None:
+    """Program to list available plate data."""
+    parser = argparse.ArgumentParser(
+        description="""Program to list available plate data"""
+    )
+    parser.add_argument(
+        "data", type=_dir_path, nargs="+", help="Plate data directory"
+    )
+    args = parser.parse_args()
+
+    for dirname in args.data:
+        print(dirname)
+        tiff_files = list(glob.glob(os.path.join(dirname, "*.tiff")))
+        pattern = re.compile(
+            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+)"
+        )
+        wells: dict[str, int] = {}
         fields = set()
         planes = set()
         channels = set()
@@ -55,18 +58,21 @@ def main():
 
         # Simple check for complete data
         if len(set(wells.values())) != 1:
-            print("Some well positions have a different number of images:", wells)
+            print(
+                "Some well positions have a different number of images:", wells
+            )
 
-        l = list(wells)
-        l.sort()
-        print("Well positions:", ", ".join(l))
-        for title, s in zip(
+        well_positions = list(wells)
+        well_positions.sort()
+        print("Well positions:", ", ".join(well_positions))
+        for title, values in zip(
             ["Fields", "Planes", "Channels", "Times", "States", "FlimIDs"],
             [fields, planes, channels, times, states, flims],
+            strict=False,
         ):
-            l = list(s)
-            l.sort()
-            print(title + ":", ", ".join([str(x) for x in l]))
+            v = list(values)
+            v.sort()
+            print(title + ":", ", ".join([str(x) for x in v]))
 
 
 if __name__ == "__main__":
