@@ -5,7 +5,7 @@ import argparse
 import logging
 import os
 
-from plate_stitch.data import PlateData
+from plate_stitch.data import PlateData, plate_pos
 
 
 def _dir_path(path: str) -> str:
@@ -59,6 +59,17 @@ def main() -> None:
             v: list[str | int] = values  # type: ignore[assignment]
             txt = ", ".join([str(x) for x in v])
             out.append(f"{title:9s}: {txt}")
+        # Load an example image to get the size and type
+        row, col = plate_pos(plate.well_positions[0])
+        im = plate.get_plane(
+            row,
+            col,
+            plate.fields[0],
+            plate.times[0],
+            plate.channels[0],
+            plate.planes[0],
+        )
+        out.append(f"{'Image':9s}: {im.shape} {im.dtype}")
         print("\n".join(out))
 
 

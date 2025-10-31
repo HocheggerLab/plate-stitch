@@ -5,6 +5,7 @@ description = "Label and stitch Operetta plate images"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "imagecodecs>=2025.8.2",
     "tifffile>=2025.10.16",
 ]
 

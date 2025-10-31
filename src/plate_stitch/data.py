@@ -6,6 +6,11 @@ import os
 import re
 import string
 from functools import reduce
+from typing import Any
+
+import numpy as np
+import numpy.typing as npt
+from tifffile import imread
 
 
 class PlateData:
@@ -17,7 +22,9 @@ class PlateData:
         rNcNfNpN-chNskNfkNflN
 
     where: N is a number; r=row; c=column; f=field; p=plane (Z);
-    ch=channel; sk=timepoint; fk=state; fl=Flim ID.
+    ch=channel; sk=timepoint; fk=state; fl=Flim ID. Numbers prefixed
+    by a single character are left padded with zeros to 2 digits wide,
+    for example r01c01f01p01-ch1sk1fk1fl1.tiff.
     """
 
     def __init__(self, path: str) -> None:
@@ -52,10 +59,12 @@ class PlateData:
         # Simple check for complete data
         if len(set(wells.values())) != 1:
             logging.getLogger(__name__).warning(
-                "Some well positions have a different number of images: %s",
+                "Some well positions directory '%s' have a different number of images: %s",
+                path,
                 wells,
             )
 
+        self._path = path
         self.well_positions: list[str] = [
             well_pos(r, c) for r, c in sorted(wells.keys())
         ]
@@ -66,7 +75,74 @@ class PlateData:
         self.states: list[int] = sorted(states)
         self.flims: list[int] = sorted(flims)
 
-    # TODO method to load an image as a numpy array TCZYX
+    def get_plane(
+        self,
+        row: int,
+        col: int,
+        field: int,
+        t: int,
+        c: int,
+        z: int,
+    ) -> npt.NDArray[Any]:
+        """Load an image plane as a numpy array YX.
+
+        Note: This method does not support the state or Flim ID identifiers
+        in the image data filename. These are assumed to be 1.
+
+        Args:
+            row: Well row.
+            col: Well column.
+            field: Well field.
+            t: Time.
+            c: Channel.
+            z: Z position.
+
+        Returns:
+            Image.
+        """
+        fn = os.path.join(
+            self._path,
+            f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1.tiff",
+        )
+        return imread(fn)
+
+    def get_image(
+        self,
+        row: int,
+        col: int,
+        field: int,
+        t: int,
+        c: int,
+        z: int,
+        size_t: int = 1,
+        size_c: int = 1,
+        size_z: int = 1,
+    ) -> npt.NDArray[Any]:
+        """Load an image stack as a numpy array TCZYX.
+
+        Note: This method does not support the state or Flim ID identifiers
+        in the image data filename. These are assumed to be 1.
+
+        Args:
+            row: Well row.
+            col: Well column.
+            field: Well field.
+            t: Start time.
+            c: Start channel.
+            z: Start Z position.
+            size_t: Length of time points.
+            size_c: Length of channels.
+            size_z: Length of Z positions.
+
+        Returns:
+            Image.
+        """
+        data = []
+        for tt in range(t, t + size_t):
+            for cc in range(c, c + size_c):
+                for zz in range(z, z + size_z):
+                    data.append(self.get_plane(row, col, field, tt, cc, zz))
+        return np.array(data).reshape((size_t, size_z, size_c) + data[0].shape)
 
 
 # https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
