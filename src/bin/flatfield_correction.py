@@ -35,7 +35,7 @@ def main() -> None:
         logger.info(dirname)
         plate = PlateData(dirname)
         im = flatfield_correction(plate)
-        print(f"{'Image':9s}: {im.shape} {im.dtype}")
+        logger.info("Correction image: %s %s", im.shape, im.dtype)
 
 
 if __name__ == "__main__":
