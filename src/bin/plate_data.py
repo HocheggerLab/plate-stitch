@@ -3,17 +3,9 @@
 
 import argparse
 import logging
-import os
 
 from plate_stitch.data import PlateData, plate_pos
-
-
-def _dir_path(path: str) -> str:
-    """Check if the path is a valid directory, or raise an error."""
-    if os.path.isdir(path):
-        return path
-    else:
-        raise FileNotFoundError(path)
+from plate_stitch.utils import dir_path
 
 
 def main() -> None:
@@ -22,7 +14,7 @@ def main() -> None:
         description="""Program to list available plate data"""
     )
     parser.add_argument(
-        "data", type=_dir_path, nargs="+", help="Plate data directory"
+        "data", type=dir_path, nargs="+", help="Plate data directory"
     )
     args = parser.parse_args()
 
