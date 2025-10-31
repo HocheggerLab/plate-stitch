@@ -73,7 +73,7 @@ def flatfield_correction(
             else random.sample(range(ntimes), time_points)
         )
         if logger.isEnabledFor(logging.DEBUG):
-            logger.info(
+            logger.debug(
                 "Sampling %s field=%d t=%s",
                 plate.well_positions[well_pos],
                 field,
