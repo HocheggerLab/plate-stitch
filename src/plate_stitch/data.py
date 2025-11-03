@@ -35,7 +35,7 @@ class PlateData:
         """
         tiff_files = list(glob.glob(os.path.join(path, "*.tiff")))
         pattern = re.compile(
-            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+)"
+            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+).tiff"
         )
         wells: dict[tuple[int, int], int] = {}
         fields = set()
@@ -46,7 +46,7 @@ class PlateData:
         flims = set()
         for file in tiff_files:
             fn = os.path.basename(file)
-            if m := pattern.match(fn):
+            if m := pattern.fullmatch(fn):
                 pos = (int(m.group(1)), int(m.group(2)))
                 wells[pos] = wells.get(pos, 0) + 1
                 fields.add(int(m.group(3)))
@@ -74,6 +74,36 @@ class PlateData:
         self.times: list[int] = sorted(times)
         self.states: list[int] = sorted(states)
         self.flims: list[int] = sorted(flims)
+
+    def get_path(
+        self,
+        row: int,
+        col: int,
+        field: int,
+        t: int,
+        c: int,
+        z: int,
+    ) -> str:
+        """Get the full path of an image plane.
+
+        Note: This method does not support the state or Flim ID identifiers
+        in the image data filename. These are assumed to be 1.
+
+        Args:
+            row: Well row.
+            col: Well column.
+            field: Well field.
+            t: Time.
+            c: Channel.
+            z: Z position.
+
+        Returns:
+            Path.
+        """
+        return os.path.join(
+            self.path,
+            f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1.tiff",
+        )
 
     def get_plane(
         self,

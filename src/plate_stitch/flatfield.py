@@ -1,4 +1,4 @@
-"""Module for utility functions."""
+"""Module for flat-field image correction functions."""
 
 import logging
 import os
