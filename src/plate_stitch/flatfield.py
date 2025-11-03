@@ -16,7 +16,7 @@ from .data import PlateData, plate_pos
 def flatfield_correction(
     plate: PlateData, positions: int = 100, time_points: int = 10
 ) -> npt.NDArray[Any]:
-    """Load the flatfield correction for the given plate.
+    """Load or compute the flatfield correction for the given plate.
 
     If absent, the flatfield correction is computed using random sampling of
     image planes and saved to the plate directory.
@@ -36,17 +36,12 @@ def flatfield_correction(
         Exception if the plate images have a Z stack; or the existing flat-field correction
         image has the wrong number of channels.
     """
+    fn = _flatfield_correction_filename(plate)
+    if os.path.exists(fn):
+        return load_flatfield_correction(plate)
+
     if len(plate.planes) != 1:
         raise Exception("Z stacks are not supported")
-
-    fn = os.path.join(plate.path, "flatfield.tiff")
-    if os.path.exists(fn):
-        im = imread(fn)
-        if im.shape[0] != len(plate.channels):
-            raise Exception(
-                f"Flat-field correction image '{fn}' has incorrect number of channels"
-            )
-        return im
 
     logger = logging.getLogger(__name__)
 
@@ -98,3 +93,35 @@ def flatfield_correction(
     im = np.array(imgs)
     imwrite(fn, im)
     return im
+
+
+def load_flatfield_correction(plate: PlateData) -> npt.NDArray[Any]:
+    """Load the flatfield correction for the given plate.
+
+    The returned image is CYX format. The channel index corresponds to the
+    channel number at the corresponding index of the plate.channels data.
+
+    Args:
+        plate: Plate data.
+
+    Returns:
+        flatfield correction image (CYX).
+
+    Raises:
+        Exception if the flat-field correction is missing; or the
+        image has the wrong number of channels.
+    """
+    fn = _flatfield_correction_filename(plate)
+    if os.path.exists(fn):
+        im = imread(fn)
+        if im.shape[0] != len(plate.channels):
+            raise Exception(
+                f"Flat-field correction image '{fn}' has incorrect number of channels"
+            )
+        return im
+    raise Exception(f"Flat-field correction image '{fn}' is missing")
+
+
+def _flatfield_correction_filename(plate: PlateData) -> str:
+    """Get the flatfield correction filename for the given plate."""
+    return os.path.join(plate.path, "flatfield.tiff")
