@@ -21,7 +21,7 @@ def flatfield_correction(
     If absent, the flatfield correction is computed using random sampling of
     image planes and saved to the plate directory.
 
-    The returned images is CYX format. The channel index corresponds to the
+    The returned image is CYX format. The channel index corresponds to the
     channel number at the corresponding index of the plate.channels data.
 
     Args:
@@ -39,7 +39,7 @@ def flatfield_correction(
     if len(plate.planes) != 1:
         raise Exception("Z stacks are not supported")
 
-    fn = os.path.join(plate._path, "flatfield.tiff")
+    fn = os.path.join(plate.path, "flatfield.tiff")
     if os.path.exists(fn):
         im = imread(fn)
         if im.shape[0] != len(plate.channels):

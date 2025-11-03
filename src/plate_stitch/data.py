@@ -64,7 +64,7 @@ class PlateData:
                 wells,
             )
 
-        self._path = path
+        self.path = path
         self.well_positions: list[str] = [
             well_pos(r, c) for r, c in sorted(wells.keys())
         ]
@@ -101,7 +101,7 @@ class PlateData:
             Image.
         """
         fn = os.path.join(
-            self._path,
+            self.path,
             f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1.tiff",
         )
         return imread(fn)
