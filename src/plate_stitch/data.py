@@ -83,6 +83,7 @@ class PlateData:
         t: int,
         c: int,
         z: int,
+        mask: bool = False,
     ) -> str:
         """Get the full path of an image plane.
 
@@ -96,13 +97,15 @@ class PlateData:
             t: Time.
             c: Channel.
             z: Z position.
+            mask: True to return the path for the image mask.
 
         Returns:
             Path.
         """
+        suffix = "-mask.tiff" if mask else ".tiff"
         return os.path.join(
             self.path,
-            f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1.tiff",
+            f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1{suffix}",
         )
 
     def get_plane(
@@ -113,6 +116,7 @@ class PlateData:
         t: int,
         c: int,
         z: int,
+        mask: bool = False,
     ) -> npt.NDArray[Any]:
         """Load an image plane as a numpy array YX.
 
@@ -126,15 +130,12 @@ class PlateData:
             t: Time.
             c: Channel.
             z: Z position.
+            mask: True to return the image mask.
 
         Returns:
             Image.
         """
-        fn = os.path.join(
-            self.path,
-            f"r{row:02d}c{col:02d}f{field:02d}p{z:02d}-ch{c}sk{t}fk1fl1.tiff",
-        )
-        return imread(fn)
+        return imread(self.get_path(row, col, field, t, c, z, mask))
 
     def get_image(
         self,
@@ -147,6 +148,7 @@ class PlateData:
         size_t: int = 1,
         size_c: int = 1,
         size_z: int = 1,
+        mask: bool = False,
     ) -> npt.NDArray[Any]:
         """Load an image stack as a numpy array TCZYX.
 
@@ -163,6 +165,7 @@ class PlateData:
             size_t: Length of time points.
             size_c: Length of channels.
             size_z: Length of Z positions.
+            mask: True to return the image mask.
 
         Returns:
             Image.
@@ -171,7 +174,9 @@ class PlateData:
         for tt in range(t, t + size_t):
             for cc in range(c, c + size_c):
                 for zz in range(z, z + size_z):
-                    data.append(self.get_plane(row, col, field, tt, cc, zz))
+                    data.append(
+                        self.get_plane(row, col, field, tt, cc, zz, mask)
+                    )
         return np.array(data).reshape((size_t, size_c, size_z) + data[0].shape)
 
     def get_image_data(
@@ -182,6 +187,7 @@ class PlateData:
         t: list[int],
         c: list[int],
         z: list[int],
+        mask: bool = False,
     ) -> npt.NDArray[Any]:
         """Load image data as a numpy array TCZYX.
 
@@ -197,6 +203,7 @@ class PlateData:
             t: Time points.
             c: Channels.
             z: Z positions.
+            mask: True to return the image mask.
 
         Returns:
             Image.
@@ -205,7 +212,9 @@ class PlateData:
         for tt in t:
             for cc in c:
                 for zz in z:
-                    data.append(self.get_plane(row, col, field, tt, cc, zz))
+                    data.append(
+                        self.get_plane(row, col, field, tt, cc, zz, mask)
+                    )
         return np.array(data).reshape((len(t), len(c), len(z)) + data[0].shape)
 
 

@@ -74,8 +74,8 @@ def segment_nuclei(
                 for t in plate.times:
                     for z in plate.planes:
                         fn = plate.get_path(
-                            row, col, field, t, channel, z
-                        ).replace(".tiff", "-mask.tiff")
+                            row, col, field, t, channel, z, True
+                        )
                         # Skip existing
                         if os.path.exists(fn) and not overwrite:
                             _ = pbar.update(1)
