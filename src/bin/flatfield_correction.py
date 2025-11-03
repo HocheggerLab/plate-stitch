@@ -23,6 +23,18 @@ def main() -> None:
         action=argparse.BooleanOptionalAction,
         help="Use debug logging (default: %(default)s)",
     )
+    parser.add_argument(
+        "--positions",
+        type=int,
+        default=100,
+        help="Number of well positions to sample (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--time_points",
+        type=int,
+        default=10,
+        help="Number of time points to sample from each well position (default: %(default)s)",
+    )
     args = parser.parse_args()
 
     logger = logging.getLogger(__name__)
@@ -34,7 +46,9 @@ def main() -> None:
     for dirname in args.data:
         logger.info(dirname)
         plate = PlateData(dirname)
-        im = flatfield_correction(plate)
+        im = flatfield_correction(
+            plate, positions=args.positions, time_points=args.time_points
+        )
         logger.info("Correction image: %s %s", im.shape, im.dtype)
 
 
