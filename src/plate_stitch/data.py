@@ -174,6 +174,40 @@ class PlateData:
                     data.append(self.get_plane(row, col, field, tt, cc, zz))
         return np.array(data).reshape((size_t, size_c, size_z) + data[0].shape)
 
+    def get_image_data(
+        self,
+        row: int,
+        col: int,
+        field: int,
+        t: list[int],
+        c: list[int],
+        z: list[int],
+    ) -> npt.NDArray[Any]:
+        """Load image data as a numpy array TCZYX.
+
+        This method support discontinuous data ranges.
+
+        Note: This method does not support the state or Flim ID identifiers
+        in the image data filename. These are assumed to be 1.
+
+        Args:
+            row: Well row.
+            col: Well column.
+            field: Well field.
+            t: Time points.
+            c: Channels.
+            z: Z positions.
+
+        Returns:
+            Image.
+        """
+        data = []
+        for tt in t:
+            for cc in c:
+                for zz in z:
+                    data.append(self.get_plane(row, col, field, tt, cc, zz))
+        return np.array(data).reshape((len(t), len(c), len(z)) + data[0].shape)
+
 
 # https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
 def _from_excel(chars: str) -> int:
