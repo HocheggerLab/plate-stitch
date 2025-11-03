@@ -172,7 +172,7 @@ class PlateData:
             for cc in range(c, c + size_c):
                 for zz in range(z, z + size_z):
                     data.append(self.get_plane(row, col, field, tt, cc, zz))
-        return np.array(data).reshape((size_t, size_z, size_c) + data[0].shape)
+        return np.array(data).reshape((size_t, size_c, size_z) + data[0].shape)
 
 
 # https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
