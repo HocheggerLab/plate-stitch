@@ -78,6 +78,7 @@ def segment_nuclei(
                         ).replace(".tiff", "-mask.tiff")
                         # Skip existing
                         if os.path.exists(fn) and not overwrite:
+                            _ = pbar.update(1)
                             continue
                         # Apply flatfield correction and image scaling to the plane
                         im = plate.get_plane(row, col, field, t, channel, z)
