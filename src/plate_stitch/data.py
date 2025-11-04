@@ -35,12 +35,13 @@ class PlateData:
         """
         tiff_files = list(glob.glob(os.path.join(path, "*.tiff")))
         pattern = re.compile(
-            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+).tiff"
+            r"r(\d+)c(\d+)f(\d+)p(\d+)-ch(\d+)sk(\d+)fk(\d+)fl(\d+)(.tiff|-mask.tiff)"
         )
         wells: dict[tuple[int, int], int] = {}
         fields = set()
         planes = set()
         channels = set()
+        mask_channels = set()
         times = set()
         states = set()
         flims = set()
@@ -51,7 +52,10 @@ class PlateData:
                 wells[pos] = wells.get(pos, 0) + 1
                 fields.add(int(m.group(3)))
                 planes.add(int(m.group(4)))
-                channels.add(int(m.group(5)))
+                if m.group(9) == ".tiff":
+                    channels.add(int(m.group(5)))
+                else:
+                    mask_channels.add(int(m.group(5)))
                 times.add(int(m.group(6)))
                 states.add(int(m.group(7)))
                 flims.add(int(m.group(8)))
@@ -71,6 +75,7 @@ class PlateData:
         self.fields: list[int] = sorted(fields)
         self.planes: list[int] = sorted(planes)
         self.channels: list[int] = sorted(channels)
+        self.mask_channels: list[int] = sorted(mask_channels)
         self.times: list[int] = sorted(times)
         self.states: list[int] = sorted(states)
         self.flims: list[int] = sorted(flims)
