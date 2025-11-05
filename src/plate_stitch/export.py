@@ -24,6 +24,7 @@ def export_wells(
     edge: int = 0,
     mode: str = "reflect",
     compression: str | None = None,
+    overwrite: bool = False,
 ) -> None:
     """Export the plate data as stitched images.
 
@@ -41,6 +42,7 @@ def export_wells(
         mode: Mode used to fill the rotated image outside the bounds
         (‘constant’, ‘edge’, ‘symmetric’, ‘reflect’, ‘wrap’).
         compression: Compression for TIFF output files.
+        overwrite: Overwrite existing masks.
 
     Raises:
         Exception if the plate has a z-stack; if the well position is invalid;
@@ -67,23 +69,48 @@ def export_wells(
     mask_channels_list = _get_list(mask_channels, plate.mask_channels)
     z = [1]  # Only support single plane stacks
 
-    # Export each position as a series of Tiffs for a XYCZT hyperstack in ImageJ.
+    # Export each position as a time-series of TIFFs
     for well_pos in tqdm(well_pos_list, desc="Wells"):
         row, col = plate_pos(well_pos)
         basedir = os.path.join(outdir, str(well_pos))
         os.makedirs(basedir, exist_ok=True)
 
         for t in tqdm(times_list, desc=well_pos):
-            images = []
-            labels = []
-            # Load N x TCZYX
-            for field in plate.fields:
-                images.append(
-                    plate.get_image_data(
-                        row, col, field, [t], channels_list, z
+            # Images
+            fn = os.path.join(basedir, f"i{t}.tif")
+            if overwrite or not os.path.exists(fn):
+                # Load N x TCZYX
+                images = []
+                for field in plate.fields:
+                    images.append(
+                        plate.get_image_data(
+                            row, col, field, [t], channels_list, z
+                        )
                     )
+                # Compose and save. Squeeze t and z axis from NTCZYX.
+                stitched_images = stitch_images(
+                    np.array(images).squeeze(axis=(1, 3)),
+                    rotation=rotation,
+                    overlap_x=overlap_x,
+                    overlap_y=overlap_y,
+                    edge=edge,
+                    mode=mode,
                 )
-                if mask_channels:
+                _ = tifffile.imwrite(
+                    fn,
+                    stitched_images,
+                    compression=compression,
+                )
+
+            if not len(mask_channels_list):
+                continue
+
+            # Labels
+            fn = os.path.join(basedir, f"m{t}.tif")
+            if overwrite or not os.path.exists(fn):
+                # Load N x TCZYX
+                labels = []
+                for field in plate.fields:
                     labels.append(
                         plate.get_image_data(
                             row,
@@ -95,22 +122,6 @@ def export_wells(
                             True,
                         )
                     )
-
-            # Compose and save. Squeeze t and z axis from NTCZYX.
-            stitched_images = stitch_images(
-                np.array(images).squeeze(axis=(1, 3)),
-                rotation=rotation,
-                overlap_x=overlap_x,
-                overlap_y=overlap_y,
-                edge=edge,
-                mode=mode,
-            )
-            _ = tifffile.imwrite(
-                os.path.join(basedir, f"i{t}.tif"),
-                stitched_images,
-                compression=compression,
-            )
-            if len(labels):
                 stitched_labels = stitch_labels(
                     np.array(labels).squeeze(axis=(1, 3)),
                     rotation=rotation,
@@ -118,7 +129,7 @@ def export_wells(
                     overlap_y=overlap_y,
                 )
                 _ = tifffile.imwrite(
-                    os.path.join(basedir, f"m{t}.tif"),
+                    fn,
                     stitched_labels,
                     compression=compression,
                 )

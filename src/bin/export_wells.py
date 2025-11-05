@@ -22,6 +22,12 @@ def main() -> None:
         "--out",
         help="Output directory (defaults to the plate data directory)",
     )
+    parser.add_argument(
+        "--overwrite",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Overwrite existing export images (default: %(default)s)",
+    )
 
     group = parser.add_argument_group("Selection Options")
     group.add_argument(
@@ -105,6 +111,7 @@ def main() -> None:
             edge=args.edge,
             mode=args.mode,
             compression=args.compression,
+            overwrite=args.overwrite,
         )
 
     logger.info("Export complete")
