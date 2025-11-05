@@ -57,6 +57,19 @@ def main() -> None:
         default="ZSTD",
         help="TIFF compression (e.g. None, LZW, ZSTD, ZLIB) (default: %(default)s)",
     )
+
+    group = parser.add_argument_group("Selection Options")
+    group.add_argument(
+        "--wells",
+        default="All",
+        help="Well positions (e.g. 'All; A1, A2') (default: %(default)s)",
+    )
+    group.add_argument(
+        "--times",
+        default="All",
+        help="Time positions (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
+    )
+
     args = parser.parse_args()
 
     logger = logging.getLogger(__name__)
@@ -68,9 +81,16 @@ def main() -> None:
     for dirname in args.data:
         logger.info(dirname)
         plate = PlateData(dirname)
+
+        # Control wells, timepoints, channels
+        wells = plate.parseWells(args.wells)
+        times = plate.parseTimes(args.times)
+
         segment_nuclei(
             plate,
             args.channel,
+            wells=wells,
+            times=times,
             model_type=args.model_type,
             diameter=args.diameter,
             border=args.border,

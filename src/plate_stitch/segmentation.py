@@ -20,6 +20,8 @@ from .flatfield import load_flatfield_correction
 def segment_nuclei(
     plate: PlateData,
     channel: int,
+    wells: list[str] | None = None,
+    times: list[int] | None = None,
     model_type: str = "Nuclei_Hoechst",
     diameter: float = 10,
     border: int = -1,
@@ -38,6 +40,8 @@ def segment_nuclei(
     Args:
         plate: Plate data.
         channel: Nuclei channel.
+        wells: Well positions.
+        times: Time positions.
         model_type: Name of nuclei model.
         diameter: Expected nuclei diameter.
         border: Width of the border examined (negative to disable).
@@ -63,17 +67,22 @@ def segment_nuclei(
     )
     n_channels = [[0, 0]]
 
-    total_ticks = len(plate.fields) * len(plate.times) * len(plate.planes)
+    if wells is None:
+        wells = plate.well_positions
+    if times is None:
+        times = plate.times
+
+    total_ticks = len(plate.fields) * len(times) * len(plate.planes)
     logging.info(
         "Processing %d wells of %d images",
-        len(plate.well_positions),
+        len(wells),
         total_ticks,
     )
-    for well_pos in tqdm(plate.well_positions, desc="Wells"):
+    for well_pos in tqdm(wells, desc="Wells"):
         with tqdm(total=total_ticks, desc=well_pos) as pbar:
             row, col = plate_pos(well_pos)
             for field in plate.fields:
-                for t in plate.times:
+                for t in times:
                     for z in plate.planes:
                         fn = plate.get_path(
                             row, col, field, t, channel, z, True
