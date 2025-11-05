@@ -1,7 +1,6 @@
 """Module for exporting plate data."""
 
 import os
-import re
 
 import numpy as np
 import tifffile
@@ -53,20 +52,11 @@ def export_wells(
     if len(plate.planes) > 1:
         raise Exception("Unsupported z-stack")
 
-    if wells == "All":
-        well_pos_list = plate.well_positions
-    else:
-        well_pos_list = [item.strip() for item in wells.split(",")]
-        for well_pos in well_pos_list:
-            if well_pos not in plate.well_positions:
-                raise Exception(
-                    f"Unknown well {well_pos} from {plate.well_positions}"
-                )
-
-    # Control timepoints, channels
-    times_list = _get_list(times, plate.times)
-    channels_list = _get_list(channels, plate.channels)
-    mask_channels_list = _get_list(mask_channels, plate.mask_channels)
+    # Control wells, timepoints, channels
+    well_pos_list = plate.parseWells(wells)
+    times_list = plate.parseTimes(times)
+    channels_list = plate.parseChannels(channels)
+    mask_channels_list = plate.parseMaskChannels(mask_channels)
     z = [1]  # Only support single plane stacks
 
     # Export each position as a time-series of TIFFs
@@ -133,47 +123,3 @@ def export_wells(
                     stitched_labels,
                     compression=compression,
                 )
-
-
-def _get_list(index: str, x: list[int]) -> list[int]:
-    """Get a selection of values from a list.
-
-    Supports returning the entire list using 'All'; known values
-    from the list as comma delimited values; or a range '1-3'.
-
-    Args:
-        index: Selection value.
-        x: List
-
-    Returns:
-        Selecion of values.
-    """
-    if not (
-        index.lower() == "all"
-        or re.match(r"^(\d+(-\d+)?)(,\s*\d+(-\d+)?)*$", index)
-    ):
-        raise Exception(
-            f"Selection input '{index}' doesn't match any of the expected patterns 'All, 1-3, 1'."
-        )
-
-    if index.lower() == "all":
-        return x
-
-    out = []
-    for token in index.split(","):
-        token = token.rstrip()
-        if "-" in token:
-            # Handle range, e.g., '1-3'
-            start, end = map(int, token.split("-"))
-            out.extend(list(range(start, end + 1)))
-        else:
-            # Handle single number, e.g., '1'
-            out.append(int(token))
-
-    out = sorted(set(out))
-    for v in out:
-        if v not in x:
-            raise Exception(
-                f"Unknown index [{v}] from selection {index} using list: {x}"
-            )
-    return out

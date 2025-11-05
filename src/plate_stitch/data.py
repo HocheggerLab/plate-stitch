@@ -222,6 +222,70 @@ class PlateData:
                     )
         return np.array(data).reshape((len(t), len(c), len(z)) + data[0].shape)
 
+    def parseWells(self, value: str) -> list[str]:
+        """Get a list of wells from the plate.
+
+        Args:
+            value: Selection value (e.g. All; A1, A2).
+
+        Returns:
+            list
+
+        Raises:
+            Exception if the well is not in the plate.
+        """
+        if value == "All":
+            return self.well_positions.copy()
+        well_pos_list = [item.strip() for item in value.split(",")]
+        for well_pos in well_pos_list:
+            if well_pos not in self.well_positions:
+                raise Exception(
+                    f"Unknown well {well_pos} from {self.well_positions}"
+                )
+        return sorted(well_pos_list)
+
+    def parseTimes(self, value: str) -> list[int]:
+        """Get a list of times from the plate.
+
+        Args:
+            value: Selection value (e.g. All; 1-3; 2; 1,3).
+
+        Returns:
+            list
+
+        Raises:
+            Exception if the selection is unrecognised or is not in the plate.
+        """
+        return _get_list(value, self.times)
+
+    def parseChannels(self, value: str) -> list[int]:
+        """Get a list of channels from the plate.
+
+        Args:
+            value: Selection value (e.g. All; 1-3; 2; 1,3).
+
+        Returns:
+            list
+
+        Raises:
+            Exception if the selection is unrecognised or is not in the plate.
+        """
+        return _get_list(value, self.channels)
+
+    def parseMaskChannels(self, value: str) -> list[int]:
+        """Get a list of mask channels from the plate.
+
+        Args:
+            value: Selection value (e.g. All; 1-3; 2; 1,3).
+
+        Returns:
+            list
+
+        Raises:
+            Exception if the selection is unrecognised or is not in the plate.
+        """
+        return _get_list(value, self.mask_channels)
+
 
 # https://stackoverflow.com/a/48984697: convert-a-number-to-excel-s-base-26
 def _from_excel(chars: str) -> int:
@@ -290,3 +354,45 @@ def plate_pos(well_pos: str) -> tuple[int, int]:
         # Delegate to a solution on StackOverflow
         return _from_excel(m.group(1)), int(m.group(2))
     raise Exception("Unknown plate well position: " + well_pos)
+
+
+def _get_list(index: str, x: list[int]) -> list[int]:
+    """Get a selection of values from a list.
+
+    Supports returning the entire list using 'All'; known values
+    from the list as comma delimited values; or a range '1-3'.
+
+    Args:
+        index: Selection value.
+        x: List
+
+    Returns:
+        Selecion of values.
+    """
+    is_all = index.lower() == "all"
+    if not (is_all or re.match(r"^(\d+(-\d+)?)(,\s*\d+(-\d+)?)*$", index)):
+        raise Exception(
+            f"Selection input '{index}' doesn't match any of the expected patterns 'All, 1-3, 1'."
+        )
+
+    if is_all:
+        return x
+
+    out = []
+    for token in index.split(","):
+        token = token.rstrip()
+        if "-" in token:
+            # Handle range, e.g., '1-3'
+            start, end = map(int, token.split("-"))
+            out.extend(list(range(start, end + 1)))
+        else:
+            # Handle single number, e.g., '1'
+            out.append(int(token))
+
+    out = sorted(set(out))
+    for v in out:
+        if v not in x:
+            raise Exception(
+                f"Unknown index [{v}] from selection {index} using list: {x}"
+            )
+    return out
