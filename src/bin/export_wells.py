@@ -80,9 +80,6 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    compression = (
-        None if args.compression.upper() == "none" else args.compression
-    )
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
@@ -107,7 +104,7 @@ def main() -> None:
             overlap_y=args.oy,
             edge=args.edge,
             mode=args.mode,
-            compression=compression,
+            compression=args.compression,
         )
 
     logger.info("Export complete")

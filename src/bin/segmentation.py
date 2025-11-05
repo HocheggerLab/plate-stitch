@@ -52,6 +52,11 @@ def main() -> None:
         type=str,
         help="Torch device name (default: auto-detect)",
     )
+    parser.add_argument(
+        "--compression",
+        default="ZSTD",
+        help="TIFF compression (e.g. None, LZW, ZSTD, ZLIB) (default: %(default)s)",
+    )
     args = parser.parse_args()
 
     logger = logging.getLogger(__name__)
@@ -71,6 +76,7 @@ def main() -> None:
             border=args.border,
             overwrite=args.overwrite,
             device_name=args.device,
+            compression=args.compression,
         )
 
 

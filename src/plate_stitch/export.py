@@ -23,7 +23,7 @@ def export_wells(
     overlap_y: int = 0,
     edge: int = 0,
     mode: str = "reflect",
-    compression: tifffile.COMPRESSION | int | str | None = None,
+    compression: str | None = None,
 ) -> None:
     """Export the plate data as stitched images.
 
@@ -105,7 +105,7 @@ def export_wells(
                 edge=edge,
                 mode=mode,
             )
-            tifffile.imwrite(
+            _ = tifffile.imwrite(
                 os.path.join(basedir, f"i{t}.tif"),
                 stitched_images,
                 compression=compression,
@@ -117,7 +117,7 @@ def export_wells(
                     overlap_x=overlap_x,
                     overlap_y=overlap_y,
                 )
-                tifffile.imwrite(
+                _ = tifffile.imwrite(
                     os.path.join(basedir, f"m{t}.tif"),
                     stitched_labels,
                     compression=compression,

@@ -25,6 +25,7 @@ def segment_nuclei(
     border: int = -1,
     overwrite: bool = False,
     device_name: str | None = None,
+    compression: str | None = None,
 ) -> None:
     """Perform nuclei segmentation on the specified channel.
 
@@ -42,6 +43,7 @@ def segment_nuclei(
         border: Width of the border examined (negative to disable).
         overwrite: Overwrite existing masks.
         device_name: Torch device name (use None to auto-detect).
+        compression: Compression for TIFF output files.
 
     Raises:
         Exception if the flat-field correction image is missing the nuclei channel.
@@ -99,7 +101,7 @@ def segment_nuclei(
                             )
                             # Create a dummy mask to allow identification of failures
                             mask = np.zeros((1, 1), dtype=np.uint8)
-                        imwrite(fn, mask)
+                        _ = imwrite(fn, mask, compression=compression)
                         _ = pbar.update(1)
 
 
