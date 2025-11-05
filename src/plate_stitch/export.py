@@ -13,10 +13,10 @@ from .stitching import stitch_images, stitch_labels
 def export_wells(
     plate: PlateData,
     outdir: str,
-    wells: str = "All",
-    times: str = "All",
-    channels: str = "All",
-    mask_channels: str = "All",
+    wells: list[str] | None = None,
+    times: list[int] | None = None,
+    channels: list[int] | None = None,
+    mask_channels: list[int] | None = None,
     rotation: float = 0,
     overlap_x: int = 0,
     overlap_y: int = 0,
@@ -30,10 +30,10 @@ def export_wells(
     Args:
         plate: Plate data.
         outdir: Output directory.
-        wells: Well positions (e.g. 'All; A1, A2')
-        times: Time positions (e.g. All; 1-3; 2; 1,3).
-        channels: Channel positions (e.g. All; 1-3; 2; 1,3).
-        mask_channels: Mask channel positions (e.g. All; 1-3; 2; 1,3).
+        wells: Well positions.
+        times: Time positions.
+        channels: Channel positions.
+        mask_channels: Mask channel positions.
         rotation: Rotation angle (degrees in counter-clockwise direction).
         overlap_x: Tile overlap in x.
         overlap_y: Tile overlap in y.
@@ -52,20 +52,24 @@ def export_wells(
     if len(plate.planes) > 1:
         raise Exception("Unsupported z-stack")
 
-    # Control wells, timepoints, channels
-    well_pos_list = plate.parseWells(wells)
-    times_list = plate.parseTimes(times)
-    channels_list = plate.parseChannels(channels)
-    mask_channels_list = plate.parseMaskChannels(mask_channels)
     z = [1]  # Only support single plane stacks
 
+    if wells is None:
+        wells = plate.well_positions
+    if times is None:
+        times = plate.times
+    if channels is None:
+        channels = plate.channels
+    if mask_channels is None:
+        mask_channels = plate.mask_channels
+
     # Export each position as a time-series of TIFFs
-    for well_pos in tqdm(well_pos_list, desc="Wells"):
+    for well_pos in tqdm(wells, desc="Wells"):
         row, col = plate_pos(well_pos)
         basedir = os.path.join(outdir, str(well_pos))
         os.makedirs(basedir, exist_ok=True)
 
-        for t in tqdm(times_list, desc=well_pos):
+        for t in tqdm(times, desc=well_pos):
             # Images
             fn = os.path.join(basedir, f"i{t}.tif")
             if overwrite or not os.path.exists(fn):
@@ -73,9 +77,7 @@ def export_wells(
                 images = []
                 for field in plate.fields:
                     images.append(
-                        plate.get_image_data(
-                            row, col, field, [t], channels_list, z
-                        )
+                        plate.get_image_data(row, col, field, [t], channels, z)
                     )
                 # Compose and save. Squeeze t and z axis from NTCZYX.
                 stitched_images = stitch_images(
@@ -92,7 +94,7 @@ def export_wells(
                     compression=compression,
                 )
 
-            if not len(mask_channels_list):
+            if not len(mask_channels):
                 continue
 
             # Labels
@@ -107,7 +109,7 @@ def export_wells(
                             col,
                             field,
                             [t],
-                            mask_channels_list,
+                            mask_channels,
                             z,
                             True,
                         )

@@ -98,13 +98,20 @@ def main() -> None:
         plate = PlateData(dirname)
         outdir = args.out if args.out else dirname
         logger.info("Exporting to %s", outdir)
+
+        # Control wells, timepoints, channels
+        wells = plate.parseWells(args.wells)
+        times = plate.parseTimes(args.times)
+        channels = plate.parseChannels(args.channels)
+        mask_channels = plate.parseMaskChannels(args.mask_channels)
+
         export_wells(
             plate,
             outdir,
-            wells=args.wells,
-            times=args.times,
-            channels=args.channels,
-            mask_channels=args.mask_channels,
+            wells=wells,
+            times=times,
+            channels=channels,
+            mask_channels=mask_channels,
             rotation=args.rotation,
             overlap_x=args.ox,
             overlap_y=args.oy,
