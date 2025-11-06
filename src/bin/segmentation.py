@@ -93,6 +93,7 @@ def main() -> None:
         wells = plate.parseWells(args.wells)
         times = plate.parseTimes(args.times)
 
+        logger.info("Segmenting nuclei channel: %d", args.nuclei_channel)
         segment_nuclei(
             plate,
             args.nuclei_channel,
@@ -105,6 +106,7 @@ def main() -> None:
             device_name=args.device,
             compression=args.compression,
         )
+        logger.info("Segmentation complete")
 
 
 if __name__ == "__main__":

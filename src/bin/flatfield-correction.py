@@ -51,6 +51,8 @@ def main() -> None:
     for dirname in args.data:
         logger.info(dirname)
         plate = PlateData(dirname)
+
+        logger.info("Creating flat-field correction")
         im = flatfield_correction(
             plate,
             positions=args.position_samples,

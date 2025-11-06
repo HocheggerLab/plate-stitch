@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Program to export a composed well image."""
+"""Program to segment and export a composed well image."""
 
 import argparse
 
@@ -7,9 +7,9 @@ from plate_stitch.utils import dir_path
 
 
 def main() -> None:
-    """Program to export a composed well image."""
+    """Program to segment and export a composed well image."""
     parser = argparse.ArgumentParser(
-        description="""Program to export a composed well image"""
+        description="""Program to segment and export a composed well image"""
     )
 
     _ = parser.add_argument(
@@ -32,10 +32,56 @@ def main() -> None:
         default="All",
         help="Channels position (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
     )
+
+    group = parser.add_argument_group("Correction Options")
     _ = group.add_argument(
-        "--mask-channels",
-        default="All",
-        help="Mask channels position (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
+        "--position-samples",
+        type=int,
+        default=100,
+        help="Number of well positions to sample (default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--time-samples",
+        type=int,
+        default=10,
+        help="Number of time points to sample from each well position (default: %(default)s)",
+    )
+
+    group = parser.add_argument_group("Segmentation Options")
+    _ = group.add_argument(
+        "--nuclei-channel",
+        type=int,
+        default=1,
+        help="Nuclei channel (default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--model-type",
+        type=str,
+        default="Nuclei_Hoechst",
+        help="Name of nuclei model (default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--diameter",
+        type=float,
+        default=10,
+        help="Expected nuclei diameter (pixels) (default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--border",
+        type=int,
+        default=-1,
+        help="Width of the border to exclude border objects (negative to disable; default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--overwrite-masks",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Overwrite existing masks (default: %(default)s)",
+    )
+    _ = group.add_argument(
+        "--device",
+        type=str,
+        help="Torch device name (default: auto-detect)",
     )
 
     _ = group = parser.add_argument_group("Composition Options")
@@ -91,6 +137,8 @@ def main() -> None:
 
     from plate_stitch.data import PlateData
     from plate_stitch.export import export_wells
+    from plate_stitch.flatfield import flatfield_correction
+    from plate_stitch.segmentation import segment_nuclei
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
@@ -106,7 +154,32 @@ def main() -> None:
         wells = plate.parseWells(args.wells)
         times = plate.parseTimes(args.times)
         channels = plate.parseChannels(args.channels)
-        mask_channels = plate.parseMaskChannels(args.mask_channels)
+        # Currently only support nuclei segmentation (i.e. not cell segmentation)
+        mask_channels = [args.nuclei_channel]
+
+        # Note: Flat-field correction uses the entire plate (ignores wells; times; channels)
+        logger.info("Creating flat-field correction")
+        im = flatfield_correction(
+            plate,
+            positions=args.position_samples,
+            time_points=args.time_samples,
+        )
+        logger.info("Correction image: %s %s", im.shape, im.dtype)
+
+        logger.info("Segmenting nuclei channel: %d", args.nuclei_channel)
+        segment_nuclei(
+            plate,
+            args.nuclei_channel,
+            wells=wells,
+            times=times,
+            model_type=args.model_type,
+            diameter=args.diameter,
+            border=args.border,
+            overwrite=args.overwrite_masks,
+            device_name=args.device,
+            compression=args.compression,
+        )
+        logger.info("Segmentation complete")
 
         outdir = args.out if args.out else dirname
         logger.info("Exporting to %s", outdir)
