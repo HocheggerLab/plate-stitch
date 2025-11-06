@@ -47,7 +47,7 @@ plate data directory using the same image naming convention with a `-mask.tiff` 
 Segmentation uses `cellpose` which requires that the named model be installed in the
 `cellpose` models directory. This can be achieved using:
 
-    cellpose --add_model [model path]
+        cellpose --add_model [model path]
 
 1. Stitch the well images and export to a named directory. The fields of the plate
 well are stiched using known patterns used by the Operetta microscope, e.g. 5x5; 3x3.
