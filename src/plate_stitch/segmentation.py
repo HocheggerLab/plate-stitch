@@ -74,8 +74,11 @@ def segment_nuclei(
 
     total_ticks = len(plate.fields) * len(times) * len(plate.planes)
     logging.info(
-        "Processing %d wells of %d images",
+        "Processing %d wells of N=%d; T=%d; Z=%d (%d images/well)",
         len(wells),
+        len(plate.fields),
+        len(times),
+        len(plate.planes),
         total_ticks,
     )
     for well_pos in tqdm(wells, desc="Wells"):
