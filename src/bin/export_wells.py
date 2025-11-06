@@ -2,10 +2,7 @@
 """Program to export a composed well image."""
 
 import argparse
-import logging
 
-from plate_stitch.data import PlateData
-from plate_stitch.export import export_wells
 from plate_stitch.utils import dir_path
 
 
@@ -15,77 +12,85 @@ def main() -> None:
         description="""Program to export a composed well image"""
     )
 
-    parser.add_argument(
+    _ = parser.add_argument(
         "data", type=dir_path, nargs="+", help="Plate data directory"
-    )
-    parser.add_argument(
-        "--out",
-        help="Output directory (defaults to the plate data directory)",
-    )
-    parser.add_argument(
-        "--overwrite",
-        default=False,
-        action=argparse.BooleanOptionalAction,
-        help="Overwrite existing export images (default: %(default)s)",
     )
 
     group = parser.add_argument_group("Selection Options")
-    group.add_argument(
+    _ = group.add_argument(
         "--wells",
         default="All",
         help="Well positions (e.g. 'All; A1, A2') (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--times",
         default="All",
         help="Time positions (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--channels",
         default="All",
         help="Channels position (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--mask-channels",
         default="All",
         help="Mask channels position (e.g. All; 1-3; 2; 1,3) (default: %(default)s)",
     )
 
-    group = parser.add_argument_group("Composition Options")
-    group.add_argument(
+    _ = group = parser.add_argument_group("Composition Options")
+    _ = group.add_argument(
         "--rotation",
         default=0.15,
         help="Rotation angle in degrees counter clockwise (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--ox",
         default=7,
         help="Pixel overlap in x (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--oy",
         default=7,
         help="Pixel overlap in y (default: %(default)s)",
     )
-
-    group = parser.add_argument_group("Image Options")
-    group.add_argument(
+    _ = group.add_argument(
         "--edge",
         default=7,
         help="Pixel edge for blending overlap (default: %(default)s)",
     )
-    group.add_argument(
+    _ = group.add_argument(
         "--mode",
         default="reflect",
         help="Mode to fill points outside the image during rotation (default: %(default)s)",
     )
-    group.add_argument(
+
+    group = parser.add_argument_group("Export Options")
+    _ = group.add_argument(
+        "--out",
+        help="Output directory (defaults to the plate data directory)",
+    )
+    _ = group.add_argument(
+        "--overwrite-export",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="Overwrite existing export images (default: %(default)s)",
+    )
+
+    group = parser.add_argument_group("Image Options")
+    _ = group.add_argument(
         "--compression",
         default="ZSTD",
         help="TIFF compression (e.g. None, LZW, ZSTD, ZLIB) (default: %(default)s)",
     )
 
     args = parser.parse_args()
+
+    # Delay imports until argument parsing succeeds
+    import logging
+
+    from plate_stitch.data import PlateData
+    from plate_stitch.export import export_wells
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
@@ -118,7 +123,7 @@ def main() -> None:
             edge=args.edge,
             mode=args.mode,
             compression=args.compression,
-            overwrite=args.overwrite,
+            overwrite=args.overwrite_export,
         )
 
     logger.info("Export complete")
