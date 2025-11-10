@@ -11,7 +11,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="""Program to list available plate data"""
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "data", type=dir_path, nargs="+", help="Plate data directory"
     )
     args = parser.parse_args()
