@@ -2,9 +2,7 @@
 """Program to list available plate data."""
 
 import argparse
-import logging
 
-from plate_stitch.data import PlateData, plate_pos
 from plate_stitch.utils import dir_path
 
 
@@ -17,6 +15,11 @@ def main() -> None:
         "data", type=dir_path, nargs="+", help="Plate data directory"
     )
     args = parser.parse_args()
+
+    # Delay imports until argument parsing succeeds
+    import logging
+
+    from plate_stitch.data import PlateData, plate_pos
 
     logger = logging.getLogger(__name__)
     logging.basicConfig(
